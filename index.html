@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Areeb's Study Dashboard</title>
+  <style>
+    /* --- FIXED DARK MODE COLOR VARIABLES (UPDATED) --- */
+    :root {
+        /* Theme Colors */
+        --bg-primary: #1e1e1e; /* Dark Grey Background */
+        --bg-card: #282828; 
+        --text-color: #f4f4f4; 
+        /* Header background is now controlled by the ::before pseudo-element */
+        --header-text: #f4f4f4; /* Light Text for Dark Header */
+        --progress-bar-bg: #444; 
+        --modal-bg: #222;
+        --modal-text: #f4f4f4;
+        --input-bg: #1e1e1e;
+        --input-border: 1px solid #666; 
+        --group-border: 1px solid #555; 
+        
+        /* Status Colors */
+        --color-high-priority: #F44336; 
+        --color-active: #FF9800; /* Original button color (Orange) - kept for references if needed */
+        --color-nearing-completion: #4CAF50; 
+        --color-mastered: #673AB7; 
+        --maths-primary: #3f51b5; 
+
+        /* Gradient Colors for Borders/Glow */
+        --glow-red: rgba(255, 100, 100, 0.8);    
+        --glow-blue: rgba(63, 81, 181, 0.7);     
+        --glow-green: rgba(76, 175, 80, 0.7);    
+        --border-gradient: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb, #a18cd1, #84fab0, #8fd3f4);
+        --progress-gradient: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 20%, #84fab0 60%, #8fd3f4 100%);
+        
+        /* NEW: Button Gradient Colors */
+        --btn-blue: #0a1c47; 
+        --btn-red: #5c0d0d;
+    }
+
+    /* --- Base Body Style --- */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-primary); 
+      color: var(--text-color); 
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      transition: opacity 0.5s ease-out; 
+    }
+    
+    .fade-out {
+      opacity: 0;
+    }
+    
+    /* Header (Updated: Image BG with Opacity Layer) */
+    header {
+      color: var(--header-text); 
+      padding: 20px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: bold;
+      position: relative; 
+      display: flex;
+      justify-content: center;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); 
+      background: none; /* Crucial to allow pseudo-element to show */
+      z-index: 1;
+    }
+    
+    /* NEW: Pseudo-element for Image and Opacity */
+    header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1; /* Place behind text */
+        
+        /* Combine 60% transparent black overlay and the image */
+        background: 
+            linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
+            url("https://img.tripi.vn/cdn-cgi/image/width=700,height=700/https://gcs.tripi.vn/public-tripi/tripi-feed/img/474410UYl/anh-background-anime-buon_030340869.jpg") center/cover no-repeat;
+        
+        background-size: cover;
+        background-position: center;
+    }
+
+    #dashboard-title {
+        color: var(--header-text); 
+    }
+
+    /* Title and button wrapper for dynamic alignment */
+    #title-wrapper {
+        display: inline-flex; 
+        align-items: center; 
+        gap: 10px; 
+        position: relative; /* Ensure it stays above the pseudo-element */
+        z-index: 2;
+    }
+
+    /* Header Edit Button */
+    #header-edit-btn {
+        position: static; 
+        background: none;
+        border: none;
+        color: var(--header-text); 
+        cursor: pointer;
+        font-size: 18px; 
+        transition: color 0.2s;
+        padding: 0; 
+        line-height: 1; 
+    }
+    #header-edit-btn:hover {
+        color: var(--color-active);
+    }
+    
+    .container-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column; 
+      justify-content: flex-start; 
+      align-items: center;
+      padding-top: 20px;
+    }
+
+    /* Manage Subjects Button (UPDATED: Gradient and Shadows) */
+    #manage-subjects-btn {
+        /* NEW: Dark Blue to Dark Red Gradient */
+        background: linear-gradient(90deg, var(--btn-blue) 0%, var(--btn-red) 100%); 
+        color: white;
+        border: none;
+        padding: 12px 28px; 
+        border-radius: 50px; 
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 30px;
+        transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
+        position: relative; 
+        z-index: 1;
+        /* 3D Shadow using dark red/blue tones */
+        box-shadow: 
+            0 4px 0 var(--btn-red), /* Dark Red for 3D effect */
+            0 8px 15px rgba(10, 28, 71, 0.5); /* Shadow using dark blue for depth */
+    }
+    #manage-subjects-btn:hover {
+        /* Slightly lighter gradient on hover */
+        background: linear-gradient(90deg, #0f245a 0%, #701111 100%); 
+        transform: translateY(-2px); /* Lift effect */
+        /* Enhanced Glow Shadow on hover */
+        box-shadow: 
+            0 2px 0 #701111, 
+            0 15px 30px rgba(92, 13, 13, 0.8); 
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      justify-items: center;
+      align-items: center;
+      max-width: 1200px;
+      padding: 30px;
+    }
+    
+    /* CARD STYLING */
+    .card {
+      background: var(--bg-card); 
+      color: var(--text-color); 
+      width: 300px;
+      height: 150px;
+      padding: 15px; 
+      border-radius: 15px;
+      
+      /* Permanent Colorful Border */
+      border: none; 
+      border-style: solid;
+      border-width: 2px;
+      border-image: var(--border-gradient) 1; 
+      border-image-slice: 1;
+
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease; 
+      
+      display: flex; 
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      position: relative; 
+    }
+    .card:hover {
+      transform: translateY(-8px) scale(1.04); 
+      /* High Intensity, Colorful Glowing Border Effect */
+      box-shadow: 
+        0 0 15px 5px var(--glow-red),    
+        0 0 25px 10px var(--glow-blue),   
+        0 0 35px 15px var(--glow-green);  
+    }
+    
+    /* Card Content Structure */
+    .card-title {
+        font-size: 32px; 
+        font-weight: bold;
+        margin: 0;
+        flex-grow: 1; 
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        width: 100%;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4); 
+    }
+    .progress-status-text {
+        font-size: 16px;
+        font-weight: 500;
+        margin-top: 5px;
+    }
+
+    /* Progress Bar Styling */
+    .progress-bar-container {
+        width: 90%;
+        height: 10px; 
+        background-color: var(--progress-bar-bg); 
+        border-radius: 5px;
+        margin-bottom: 5px;
+        overflow: hidden;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); 
+    }
+    .progress-bar {
+        height: 100%;
+        width: 0%; 
+        border-radius: 5px;
+        transition: width 0.5s ease-out;
+    }
+    
+    /* Glow effect for progress bars when they have progress */
+    .progress-bar[data-glow="true"] {
+        box-shadow: 0 0 8px var(--glow-blue); 
+        transition: width 0.5s ease-out, box-shadow 0.3s ease-out;
+    }
+
+    /* Subject Action Buttons (Goal Setting) */
+    .subject-action-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: var(--text-color); 
+        transition: color 0.2s;
+        z-index: 10;
+        padding: 0;
+    }
+    .subject-action-btn:hover {
+        color: var(--maths-primary);
+    }
+
+    /* --- COMMON MODAL STYLES (Fixed Opacity, New Border) --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7); 
+        display: none; 
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+    }
+    .modal-overlay.active {
+        display: flex;
+    }
+    .modal-content {
+        background: var(--modal-bg); 
+        color: var(--modal-text);
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.6);
+        width: 450px; 
+        
+        /* Colorful Border for Modals */
+        border: none; 
+        border-style: solid;
+        border-width: 3px; 
+        border-image: var(--border-gradient) 1; 
+        border-image-slice: 1;
+    }
+    .modal-content h3 {
+        margin-top: 0;
+        color: var(--maths-primary);
+        font-size: 1.4em;
+    }
+    .modal-content input[type="text"], .modal-content input[type="number"] {
+        width: 100%;
+        padding: 10px;
+        margin: 15px 0 20px 0;
+        border: var(--input-border);
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 1em;
+        text-align: center;
+        background: var(--input-bg); 
+        color: var(--modal-text); 
+    }
+    .modal-actions {
+        display: flex;
+        justify-content: space-between; 
+        align-items: center;
+        margin-top: 20px;
+    }
+    .modal-actions-right button {
+        border-radius: 8px;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-weight: 600;
+        margin-left: 10px;
+        transition: background 0.2s, color 0.2s, transform 0.1s, border-color 0.2s;
+        border: none;
+    }
+
+    .modal-primary-btn {
+        background: var(--maths-primary);
+        color: white;
+    }
+    .modal-primary-btn:hover {
+        background: #303f9f;
+        transform: translateY(-1px);
+    }
+    
+    /* Beautiful Cancel Button Style */
+    .modal-cancel-btn {
+        background: #333; 
+        color: #ddd;
+        border: 1px solid #555;
+    }
+    .modal-cancel-btn:hover {
+        background: #444;
+        color: #fff;
+        transform: translateY(-1px);
+    }
+    
+    /* Reset Button Style */
+    #reset-goal-btn {
+        background: #ff5252; 
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+    #reset-goal-btn:hover {
+        background: #e53935; 
+    }
+
+    /* Subject Selection Styles */
+    .subject-group {
+        border: var(--group-border);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    .subject-group h4 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: var(--modal-text);
+        border-bottom: 1px dashed #444;
+        padding-bottom: 5px;
+    }
+    .subject-group label {
+        display: block;
+        margin-bottom: 8px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    /* Compulsory Subject Styling (without the text label) */
+    .subject-group label[data-compulsory="true"] {
+        color: var(--maths-primary); 
+        font-weight: bold;
+        cursor: default;
+    }
+
+    /* Mobile Responsiveness Fix */
+    @media (max-width: 768px) {
+        .container {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .card {
+            width: 90%;
+            max-width: 400px;
+        }
+        .modal-content {
+            width: 90%;
+            max-width: none;
+            margin: 0 10px;
+            padding: 20px;
+        }
+        /* Mobile adjustment for actions layout */
+        .modal-actions {
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .modal-actions-right {
+            margin-top: 10px;
+        }
+        #reset-goal-btn {
+             margin-right: auto; 
+             margin-bottom: 10px;
+        }
+    }
+  </style>
+</head>
+<body>
+
+<div class="modal-overlay" id="goal-modal">
+    <div class="modal-content">
+        <h3 id="modal-goal-title">Set Goal for [Subject]</h3>
+        <p>Enter the total number of **planned lessons** for this subject:</p>
+        <input type="number" id="goal-input" min="1" placeholder="e.g., 20">
+        <div class="modal-actions">
+            <button id="reset-goal-btn" style="display:none;">Reset Goal</button>
+            <div class="modal-actions-right">
+                <button class="modal-cancel-btn" onclick="closeGoalModal()">Cancel</button>
+                <button class="modal-primary-btn" id="goal-set-btn" disabled>Set Goal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="header-modal">
+    <div class="modal-content">
+        <h3>Edit Dashboard Title</h3>
+        <p>Enter a new title for your dashboard:</p>
+        <input type="text" id="header-input" placeholder="e.g., Areeb's Study Hub" maxlength="40">
+        <div class="modal-actions">
+            <div class="modal-actions-right">
+                <button class="modal-cancel-btn" onclick="closeHeaderModal()">Cancel</button>
+                <button class="modal-primary-btn" id="header-save-btn" disabled>Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="selection-modal">
+    <div class="modal-content">
+        <h3>Manage O/L Subject Selection</h3>
+        <p>Compulsory subjects are always shown. **Please select ONE subject from each Optional Group.**</p>
+        
+        <div id="subject-selection-form">
+            </div>
+
+        <div class="modal-actions">
+            <div class="modal-actions-right">
+                <button class="modal-cancel-btn" onclick="closeSelectionModal()">Close</button>
+                <button class="modal-primary-btn" id="selection-save-btn">Save Selections</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<header>
+    <div id="title-wrapper">
+        <span id="dashboard-title">Areeb's Study Dashboard</span>
+        <button id="header-edit-btn" onclick="openHeaderModal()" title="Edit Dashboard Title">✏️</button>
+    </div>
+</header>
+
+<div class="container-wrapper">
+  <button id="manage-subjects-btn" onclick="openSelectionModal()">Manage Subjects</button>
+  <div class="container" id="dashboard-container">
+  </div>
+</div>
+
+<footer>© 2025 Areeb • Study Hub</footer>
+
+<script>
+    // --- STORAGE KEYS ---
+    const SELECTED_SUBJECTS_KEY = 'areeb_optional_subjects';
+    const GOAL_STORAGE_KEY = 'areeb_subject_goals';
+    const HEADER_TITLE_KEY = 'areeb_dashboard_title';
+
+    // --- 1. MASTER SUBJECT DATA ---
+    const ALL_SUBJECT_DATA = {
+        'maths': { name: 'Maths', file: 'maths.html', key: 'areeb_lessons_maths', id: 'maths', isCompulsory: true },
+        'science': { name: 'Science', file: 'science.html', key: 'areeb_lessons_science', id: 'science', isCompulsory: true },
+        'history': { name: 'History', file: 'history.html', key: 'areeb_lessons_history', id: 'history', isCompulsory: true },
+        'tamil': { name: 'Tamil', file: 'tamil.html', key: 'areeb_lessons_tamil', id: 'tamil', isCompulsory: true },
+        'islam': { name: 'Islam', file: 'islam.html', key: 'areeb_lessons_islam', id: 'islam', isCompulsory: true },
+        'english': { name: 'English', file: 'english.html', key: 'areeb_lessons_english', id: 'english', isCompulsory: true },
+        
+        // Optional Subjects
+        'ict': { name: 'ICT', file: 'ict.html', key: 'areeb_lessons_ict', id: 'ict', isCompulsory: false },
+        'hpe': { name: 'HPE', file: 'hpe.html', key: 'areeb_lessons_hpe', id: 'hpe', isCompulsory: false },
+        'home-science': { name: 'Home Science', file: 'home-science.html', key: 'areeb_lessons_home_science', id: 'home-science', isCompulsory: false },
+        'sinhala': { name: 'Sinhala', file: 'sinhala.html', key: 'areeb_lessons_sinhala', id: 'sinhala', isCompulsory: false },
+        'business-studies': { name: 'Business Studies', file: 'business-studies.html', key: 'areeb_lessons_business_studies', id: 'business-studies', isCompulsory: false },
+        'english-literature': { name: 'English Literature', file: 'english-literature.html', key: 'areeb_lessons_english_literature', id: 'english-literature', isCompulsory: false },
+        'arabic-literature': { name: 'Arabic Literature', file: 'arabic-literature.html', key: 'areeb_lessons_arabic_literature', id: 'arabic-literature', isCompulsory: false },
+        'tamil-literature': { name: 'Tamil Literature', file: 'tamil-literature.html', key: 'areeb_lessons_tamil_literature', id: 'tamil-literature', isCompulsory: false }
+    };
+    
+    // Grouping structure as requested
+    const SUBJECT_GROUPS = {
+        'group_compulsory': { name: 'Compulsory Subjects', subjects: ['maths', 'science', 'history', 'tamil', 'islam', 'english'], isOptional: false },
+        'group_optional_1': { name: 'Optional Group 1 (Technical & Home)', subjects: ['ict', 'hpe', 'home-science'], isOptional: true },
+        'group_optional_2': { name: 'Optional Group 2 (Commerce & Other Language)', subjects: ['sinhala', 'business-studies'], isOptional: true },
+        'group_optional_3': { name: 'Optional Group 3 (Literature)', subjects: ['english-literature', 'arabic-literature', 'tamil-literature'], isOptional: true }
+    };
+
+    let currentSubjectId = ''; 
+    const PROGRESS_BAR_GRADIENT = 'var(--progress-gradient)'; 
+
+    // --- DATA ACCESS & SELECTION HELPERS ---
+    
+    function getSelectedOptionalSubjects() {
+        try {
+            const selectedIds = localStorage.getItem(SELECTED_SUBJECTS_KEY);
+            return selectedIds ? JSON.parse(selectedIds) : []; 
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function getSubjectsToDisplay() {
+        const compulsorySubjects = Object.keys(ALL_SUBJECT_DATA).filter(id => ALL_SUBJECT_DATA[id].isCompulsory);
+        const optionalSubjects = getSelectedOptionalSubjects();
+        
+        const allIds = [...compulsorySubjects, ...optionalSubjects];
+        return Array.from(new Set(allIds));
+    }
+
+
+    // --- NAVIGATION/TRANSITION ---
+    
+    function smoothNavigate(subjectId) {
+        if (document.querySelectorAll('.modal-overlay.active').length > 0) {
+            return;
+        }
+
+        document.body.classList.add('fade-out');
+        setTimeout(() => {
+            const subject = ALL_SUBJECT_DATA[subjectId];
+            if (subject) {
+                window.location.href = `${subject.file}`;
+            }
+        }, 500);
+    }
+    
+    // --- SELECTION MODAL CONTROLS ---
+
+    function renderSelectionForm() {
+        const formDiv = document.getElementById('subject-selection-form');
+        formDiv.innerHTML = '';
+        const selectedOptionals = getSelectedOptionalSubjects(); 
+
+        for (const groupId in SUBJECT_GROUPS) {
+            const group = SUBJECT_GROUPS[groupId];
+            let groupHtml = `<div class="subject-group"><h4>${group.name}</h4>`;
+            
+            group.subjects.forEach(subjectId => {
+                const subject = ALL_SUBJECT_DATA[subjectId];
+                
+                if (group.isOptional) {
+                    const isChecked = selectedOptionals.includes(subjectId);
+                    
+                    groupHtml += `
+                        <label>
+                            <input 
+                                type="checkbox" 
+                                name="${groupId}" 
+                                value="${subjectId}" 
+                                ${isChecked ? 'checked' : ''}
+                                onchange="handleOptionalSelection(this)"
+                            >
+                            ${subject.name}
+                        </label>
+                    `;
+                } else {
+                    // Compulsory subjects: Simple bold text
+                    groupHtml += `
+                        <label data-compulsory="true">
+                            ${subject.name}
+                        </label>
+                    `;
+                }
+            });
+            groupHtml += `</div>`;
+            formDiv.innerHTML += groupHtml;
+        }
+    }
+    
+    // Custom logic to enforce only ONE selection per Optional Group
+    function handleOptionalSelection(changedCheckbox) {
+        const groupName = changedCheckbox.name;
+        const allGroupCheckboxes = document.querySelectorAll(`input[name="${groupName}"]`);
+        
+        // Uncheck all others in the same group
+        allGroupCheckboxes.forEach(checkbox => {
+            if (checkbox !== changedCheckbox) {
+                checkbox.checked = false;
+            }
+        });
+    }
+
+
+    function openSelectionModal() {
+        renderSelectionForm();
+        document.getElementById('selection-modal').classList.add('active');
+    }
+
+    function closeSelectionModal() {
+        document.getElementById('selection-modal').classList.remove('active');
+    }
+
+    document.getElementById('selection-save-btn').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('#subject-selection-form input[type="checkbox"]:checked');
+        const newOptionalSelection = Array.from(checkboxes).map(cb => cb.value);
+        
+        localStorage.setItem(SELECTED_SUBJECTS_KEY, JSON.stringify(newOptionalSelection));
+        loadDashboard(); 
+        closeSelectionModal();
+    });
+
+    // --- PROGRESS CALCULATION AND RENDERING ---
+    
+    function getGoals() { 
+        try {
+            const goals = localStorage.getItem(GOAL_STORAGE_KEY);
+            return goals ? JSON.parse(goals) : {};
+        } catch (e) {
+            return {};
+        }
+    }
+    
+    function loadSubjectProgress(subjectKey) { 
+        let completed = 0;
+        let total = 0;
+        try {
+            const savedData = localStorage.getItem(subjectKey);
+            if (savedData) {
+                const lessons = JSON.parse(savedData);
+                total = lessons.length;
+                completed = lessons.filter(lesson => lesson.status === 'completed').length;
+            }
+        } catch (e) {
+            return { completed: 0, total: 0 };
+        }
+        return { completed, total };
+    }
+
+    function calculateProgress(completed, total, goal) { 
+        let actualTotal = goal || total;
+        let statusText;
+        let progressColorOrGradient;
+        let shouldGlow = false;
+
+        if (actualTotal <= 0 && goal === 0) {
+            return { percent: 0, color: '#CCCCCC', statusText: 'Set Goal', progressBackground: '#CCCCCC', shouldGlow: false };
+        }
+        
+        let percent = Math.min(100, Math.round((completed / actualTotal) * 100));
+
+        if (percent === 0) {
+             progressColorOrGradient = 'var(--color-high-priority)'; 
+             statusText = `Goal: 0/${actualTotal}`;
+             shouldGlow = false;
+        } else {
+             progressColorOrGradient = PROGRESS_BAR_GRADIENT;
+             shouldGlow = true; 
+
+             let statusColor;
+             statusText = `Progress: ${completed}/${actualTotal}`;
+
+             if (percent >= 100) { 
+                statusColor = 'var(--color-mastered)'; 
+                statusText = completed > actualTotal ? `EXCEEDED Goal! (${completed}/${actualTotal})` : `Mastered! (${completed}/${actualTotal})`;
+                percent = 100; 
+             } 
+             else if (percent >= 75) { statusColor = 'var(--color-nearing-completion)'; } 
+             else if (percent >= 25) { statusColor = 'var(--color-active)'; } 
+             else { statusColor = 'var(--color-high-priority)'; }
+             
+             return { percent, color: statusColor, statusText, progressBackground: progressColorOrGradient, shouldGlow };
+        }
+        
+        return { percent, color: progressColorOrGradient, statusText, progressBackground: progressColorOrGradient, shouldGlow };
+    }
+
+
+    function openGoalModal(event, id) { 
+        event.stopPropagation();
+        currentSubjectId = id;
+        const subject = ALL_SUBJECT_DATA[id];
+        const goals = getGoals();
+        
+        document.getElementById('modal-goal-title').textContent = `Set Goal for ${subject.name}`;
+        
+        const inputField = document.getElementById('goal-input');
+        const currentGoal = goals[id] || '';
+        inputField.value = currentGoal;
+        
+        const setButton = document.getElementById('goal-set-btn');
+        const resetButton = document.getElementById('reset-goal-btn');
+
+        if (currentGoal) {
+            resetButton.style.display = 'inline-block';
+        } else {
+            resetButton.style.display = 'none';
+        }
+
+        setButton.disabled = !(parseInt(inputField.value) > 0);
+        setButton.onclick = () => {
+            const goalValue = parseInt(inputField.value);
+            if (goalValue > 0) {
+                const goals = getGoals();
+                goals[currentSubjectId] = goalValue;
+                localStorage.setItem(GOAL_STORAGE_KEY, JSON.stringify(goals));
+                loadDashboard(); 
+                closeGoalModal();
+            }
+        };
+
+        resetButton.onclick = () => {
+            const goals = getGoals();
+            delete goals[currentSubjectId]; 
+            localStorage.setItem(GOAL_STORAGE_KEY, JSON.stringify(goals));
+            
+            inputField.value = ''; 
+            
+            loadDashboard(); 
+            closeGoalModal();
+        };
+
+        document.getElementById('goal-modal').classList.add('active');
+        inputField.focus(); 
+    }
+
+    function closeGoalModal() {
+        document.getElementById('goal-modal').classList.remove('active');
+        currentSubjectId = '';
+    }
+
+    document.getElementById('goal-input').addEventListener('input', function() {
+        const goalValue = parseInt(this.value);
+        document.getElementById('goal-set-btn').disabled = !(goalValue > 0);
+    });
+
+    function renderCard(subjectId, subjectData) {
+        const cardElement = document.createElement('div');
+        const goals = getGoals();
+        const goal = goals[subjectId] || 0;
+
+        const { completed, total } = loadSubjectProgress(subjectData.key);
+        const { percent, color, statusText, progressBackground, shouldGlow } = calculateProgress(completed, total, goal); 
+
+        cardElement.className = 'card';
+        cardElement.setAttribute('data-id', subjectId);
+        cardElement.onclick = () => smoothNavigate(subjectId); 
+        
+        cardElement.innerHTML = `
+            <button class="subject-action-btn" onclick="openGoalModal(event, '${subjectId}')" title="Set Lesson Goal">🎯</button>
+            
+            <div class="card-title">
+                ${subjectData.name}
+                <span class="progress-status-text" style="color:${color};">${statusText}</span>
+            </div>
+            <div class="progress-bar-container">
+                <div 
+                    class="progress-bar" 
+                    data-glow="${shouldGlow}"
+                    style="width: ${percent}%; background: ${progressBackground};"
+                ></div>
+            </div>
+        `;
+
+        document.getElementById('dashboard-container').appendChild(cardElement);
+    }
+    
+    // --- HEADER MODAL CONTROLS ---
+
+    function openHeaderModal() {
+        const title = localStorage.getItem(HEADER_TITLE_KEY) || "Areeb's Study Dashboard";
+        const input = document.getElementById('header-input');
+        input.value = title;
+        document.getElementById('header-modal').classList.add('active');
+
+        document.getElementById('header-save-btn').disabled = input.value.trim().length === 0;
+        input.addEventListener('input', () => {
+             document.getElementById('header-save-btn').disabled = input.value.trim().length === 0;
+        });
+        input.focus();
+    }
+
+    function closeHeaderModal() {
+        document.getElementById('header-modal').classList.remove('active');
+    }
+
+    document.getElementById('header-save-btn').addEventListener('click', function() {
+        const newTitle = document.getElementById('header-input').value.trim();
+        if (newTitle) {
+            localStorage.setItem(HEADER_TITLE_KEY, newTitle);
+            document.getElementById('dashboard-title').textContent = newTitle;
+            closeHeaderModal();
+        }
+    });
+
+    // --- INITIALIZATION ---
+
+    function loadDashboard() {
+        document.getElementById('dashboard-title').textContent = localStorage.getItem(HEADER_TITLE_KEY) || "Areeb's Study Dashboard";
+
+        const container = document.getElementById('dashboard-container');
+        container.innerHTML = ''; 
+
+        const subjectsToDisplay = getSubjectsToDisplay();
+        
+        subjectsToDisplay.forEach(id => {
+            const subjectData = ALL_SUBJECT_DATA[id];
+            if (subjectData) {
+                renderCard(id, subjectData);
+            }
+        });
+
+        if (subjectsToDisplay.length === 0) {
+            container.innerHTML = `<p style="text-align:center; color:var(--text-color); padding: 50px 0;">No subjects selected. Click 'Manage Subjects' to begin.</p>`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDashboard();
+    });
+</script>
+
+</body>
+</html>
