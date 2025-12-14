@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Lessons</title>
+  <style>
+    :root {
+      /* Keeping existing color variables for structure */
+      --maths-primary: #3f51b5; 
+      --color-not-started: #f44336;
+      --color-in-progress: #ff9800;
+      --color-completed: #4caf50;
+      
+      /* New Deadline Colors */
+      --color-overdue: #e91e63; 
+      --color-due-today: #ff9800; 
+      --color-due-tomorrow: #ffeb3b; 
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh; 
+      /* NEW: Add transition property for fade-in */
+      transition: opacity 0.5s ease-in; 
+    }
+
+    /* NEW: Initial state for the fade-in effect and also used for fade-out */
+    .fade-out {
+        opacity: 0;
+    }
+    
+    header {
+      background: var(--maths-primary); 
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+      font-size: 30px;
+      position: relative;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .back-link {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #fff;
+        text-decoration: none;
+        font-size: 18px;
+        padding: 5px 10px;
+        border: 1px solid white;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+    .back-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Lesson Tracker Layout */
+    .lesson-tracker {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      max-width: 1300px;
+      margin: 40px auto;
+      padding: 0 30px;
+    }
+    .status-category {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      padding: 20px 15px;
+    }
+    .status-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 2px solid;
+        padding-bottom: 10px;
+    }
+    .status-title {
+        margin: 0;
+        font-size: 1.5em;
+        font-weight: 600;
+    }
+    .not-started-color { color: var(--color-not-started); border-color: var(--color-not-started); }
+    .in-progress-color { color: var(--color-in-progress); border-color: var(--color-in-progress); }
+    .completed-color { color: var(--color-completed); border-color: var(--color-completed); }
+
+    .add-btn {
+        background: var(--maths-primary);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: background 0.3s;
+    }
+    .add-btn:hover {
+        background: #30419d;
+    }
+
+    .lesson-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 200px;
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+    
+    /* Lesson Card Styling */
+    .lesson-card {
+        background: #f7f7f7;
+        padding: 12px 15px;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        transition: box-shadow 0.2s;
+        border-left: 5px solid;
+        font-size: 1.05em;
+        display: flex; 
+        flex-direction: column; 
+        gap: 5px;
+    }
+    .lesson-card:hover {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* Lesson Content Wrapper */
+    .lesson-title-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .lesson-card a {
+        text-decoration: none;
+        color: #222;
+        font-weight: 500;
+        flex-grow: 1;
+        margin-right: 10px;
+    }
+
+    /* Deadline Display */
+    .deadline-display {
+        font-size: 0.85em;
+        font-weight: 600;
+        padding-left: 5px;
+    }
+    .deadline-icon {
+        margin-right: 5px;
+        font-size: 1.1em;
+    }
+
+    /* Deadline Alert Styles */
+    .due-tomorrow {
+        border-left-color: var(--color-due-tomorrow) !important;
+        box-shadow: 0 0 10px var(--color-due-tomorrow);
+    }
+    .due-today {
+        border-left-color: var(--color-due-today) !important;
+        box-shadow: 0 0 10px var(--color-due-today);
+    }
+    .overdue {
+        border-left-color: var(--color-overdue) !important;
+        box-shadow: 0 0 15px var(--color-overdue);
+        animation: pulse-red 1s infinite alternate; 
+    }
+    @keyframes pulse-red {
+        from { opacity: 1; }
+        to { opacity: 0.8; }
+    }
+    
+    /* Button Group for Arrows and Delete */
+    .lesson-actions {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    /* New Button Style for Set Deadline */
+    .due-btn {
+        background: #9c27b0; 
+        border: none;
+        color: white;
+        font-size: 0.8em;
+        font-weight: bold;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+    .due-btn:hover {
+        background: #7b1fa2;
+    }
+
+    /* Move Button Styling */
+    .move-btn {
+        background: none;
+        border: 1px solid #ccc;
+        color: #555;
+        font-size: 0.8em;
+        font-weight: bold;
+        cursor: pointer;
+        width: 25px;
+        height: 25px;
+        border-radius: 4px;
+        transition: background 0.2s, color 0.2s;
+    }
+    .move-btn:hover {
+        background: var(--maths-primary);
+        color: white;
+        border-color: var(--maths-primary);
+    }
+
+    /* Delete Button Styling */
+    .delete-btn {
+        background: none;
+        border: none;
+        color: #999;
+        font-weight: bold;
+        font-size: 1.1em;
+        cursor: pointer;
+        padding: 0 5px;
+        transition: color 0.2s;
+    }
+    .delete-btn:hover {
+        color: var(--color-not-started);
+    }
+
+    /* --- CUSTOM MODAL STYLES --- */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none; 
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .modal-overlay.active {
+        display: flex;
+    }
+    .modal-content {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        width: 350px;
+    }
+    .modal-content h3 {
+        margin-top: 0;
+        color: var(--maths-primary);
+        font-size: 1.4em;
+    }
+    .modal-content input[type="text"], .modal-content input[type="date"] {
+        width: 100%;
+        padding: 10px;
+        margin: 15px 0 20px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+        font-size: 1em;
+    }
+    .modal-actions {
+        text-align: right;
+    }
+    .modal-actions button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-left: 10px;
+        font-weight: 600;
+        transition: background 0.2s, opacity 0.2s;
+    }
+
+    /* Styles for the ADD LESSON Modal Buttons */
+    #modal-ok-btn {
+        background: var(--maths-primary);
+        color: white;
+    }
+    #modal-ok-btn:disabled {
+        opacity: 0.5; 
+        cursor: not-allowed;
+    }
+    #modal-cancel-btn {
+        background: #eee;
+        color: #555;
+    }
+    #modal-cancel-btn:hover {
+        background: #ddd;
+    }
+
+    /* Styles for the DEADLINE Modal Buttons */
+    #deadline-lesson-title {
+        font-weight: bold;
+        color: #555;
+        display: block;
+        margin-bottom: 10px;
+    }
+    #deadline-set-btn {
+        background: var(--maths-primary); 
+        color: white;
+    }
+    #deadline-set-btn:hover {
+        background: #30419d;
+    }
+    #deadline-clear-btn {
+        background: var(--color-not-started); 
+        color: white;
+        float: left; 
+    }
+    #deadline-clear-btn:hover {
+        background: #c62828;
+    }
+    #deadline-cancel-btn {
+        background: #eee;
+        color: #555;
+    }
+    #deadline-cancel-btn:hover {
+        background: #ddd;
+    }
+
+    /* --- TOAST NOTIFICATION STYLES --- */
+    #toast-message {
+        visibility: hidden; 
+        min-width: 250px;
+        background-color: var(--color-completed); 
+        color: #fff;
+        text-align: center;
+        border-radius: 8px;
+        padding: 16px;
+        position: fixed;
+        z-index: 1001; 
+        left: 50%;
+        bottom: 30px;
+        transform: translateX(-50%);
+        font-size: 17px;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transition: opacity 0.5s, visibility 0.5s;
+    }
+    #toast-message.show {
+        visibility: visible;
+        opacity: 1;
+    }
+    /* Start of Final Mobile Responsiveness Fix */
+@media (max-width: 768px) {
+    
+    /* Fix 1: Header Alignment and Collapsing */
+    header {
+        /* Pushes the main title down to ensure it clears the link and remains perfectly centered */
+        padding-top: 50px !important; 
+        padding-bottom: 20px !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+        font-size: 20px !important; 
+    }
+    .back-link {
+        /* Positions the link cleanly in the top-left corner */
+        position: absolute;
+        top: 10px; 
+        left: 10px; 
+        transform: none !important; /* Ensures the link stays put */
+        font-size: 14px !important;
+        padding: 4px 8px !important;
+    }
+    
+    /* Fix 2: Column Stacking */
+    .lesson-tracker {
+        grid-template-columns: 1fr; /* Stack columns vertically */
+        gap: 25px; 
+        padding: 0 10px; 
+    }
+    
+    /* Fix 3: Change Move Button Symbols to Up/Down Arrows */
+    .move-btn {
+        font-size: 0 !important; 
+        width: 30px;
+        position: relative;
+        line-height: 1.5;
+    }
+
+    /* Pseudoelement for all buttons */
+    .move-btn::before {
+        font-size: 16px; 
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-weight: bold;
+    }
+
+    /* Targets the 'move left' (UP) button */
+    .move-btn[data-direction="up"]::before {
+        content: '▲'; 
+    }
+
+    /* Targets the 'move right' (DOWN) button */
+    .move-btn[data-direction="down"]::before {
+        content: '▼'; 
+    }
+}
+/* End of Final Mobile Responsiveness Fix */
+  </style>
+</head>
+<body class="fade-out"> 
+
+<div class="modal-overlay" id="lesson-modal">
+    <div class="modal-content">
+        <h3>Name Your Lesson</h3>
+        <p>Enter the title of the new lesson:</p>
+        <input type="text" id="lesson-input" placeholder="e.g., 5.1 Introduction to Vectors" maxlength="50">
+        <div class="modal-actions">
+            <button id="modal-cancel-btn" onclick="closeModal()">Cancel</button>
+            <button id="modal-ok-btn" disabled>OK</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="deadline-modal">
+    <div class="modal-content">
+        <h3>Set Deadline</h3>
+        <span id="deadline-lesson-title"></span>
+        <p>Choose the **deadline date** for this lesson:</p>
+        <input type="date" id="deadline-input">
+        <div class="modal-actions">
+            <button id="deadline-clear-btn" onclick="clearDeadline()">Clear Deadline</button>
+            <button id="deadline-cancel-btn" onclick="closeDeadlineModal()">Cancel</button>
+            <button id="deadline-set-btn">Set Deadline</button>
+        </div>
+    </div>
+</div>
+<header>
+    <a href="#" class="back-link" onclick="smoothNavigate('index.html')">← Dashboard</a>
+    Business Studies Lessons
+</header>
+
+<div class="lesson-tracker">
+    
+    <div class="status-category">
+        <div class="status-header not-started-color">
+            <h3 class="status-title" id="not-started-count">Not Started (0)</h3> 
+            <button class="add-btn" onclick="openModal('not-started')">➕ Add New Lesson</button>
+        </div>
+        <div class="lesson-list" id="not-started-list"></div>
+    </div>
+
+    <div class="status-category">
+        <div class="status-header in-progress-color">
+            <h3 class="status-title" id="in-progress-count">In Progress (0)</h3>
+            <button class="add-btn" onclick="openModal('in-progress')">➕ Add New Lesson</button>
+        </div>
+        <div class="lesson-list" id="in-progress-list"></div>
+    </div>
+    
+    <div class="status-category">
+        <div class="status-header completed-color">
+            <h3 class="status-title" id="completed-count">Completed (0)</h3>
+            <button class="add-btn" onclick="openModal('completed')">➕ Add New Lesson</button>
+        </div>
+        <div class="lesson-list" id="completed-list"></div>
+    </div>
+</div>
+
+<div id="toast-message"></div>
+<script>
+    const STORAGE_KEY = 'areeb_lessons_business_st'; 
+    
+    let currentStatus = ''; 
+    let currentLessonId = null; 
+
+    const lessonModal = document.getElementById('lesson-modal');
+    const inputField = document.getElementById('lesson-input');
+    const okButton = document.getElementById('modal-ok-btn');
+    
+    const deadlineModal = document.getElementById('deadline-modal');
+    const deadlineTitle = document.getElementById('deadline-lesson-title');
+    const deadlineInput = document.getElementById('deadline-input');
+    const deadlineSetBtn = document.getElementById('deadline-set-btn');
+
+    const statusMap = {
+        'not-started': { color: 'var(--color-not-started)', next: 'in-progress', prev: null, listId: 'not-started-list', countId: 'not-started-count' },
+        'in-progress': { color: 'var(--color-in-progress)', next: 'completed', prev: 'not-started', listId: 'in-progress-list', countId: 'in-progress-count' },
+        'completed': { color: 'var(--color-completed)', next: null, prev: 'in-progress', listId: 'completed-list', countId: 'completed-count' }
+    };
+
+    // Helper to generate a unique ID for each lesson 
+    function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substring(2);
+    }
+
+    // --- DATE UTILITIES ---
+    
+    function getTodayDateString() {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d.toISOString().split('T')[0];
+    }
+
+    function getTomorrowDateString() {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        d.setHours(0, 0, 0, 0);
+        return d.toISOString().split('T')[0];
+    }
+
+    function formatDateForDisplay(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString + 'T00:00:00'); 
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // --- DATA PERSISTENCE FUNCTIONS ---
+    
+    function saveLessons() {
+        const lessonsData = [];
+        for (const status in statusMap) {
+            const listElement = document.getElementById(statusMap[status].listId);
+            Array.from(listElement.querySelectorAll('.lesson-card')).forEach(card => {
+                lessonsData.push({
+                    id: card.getAttribute('data-id'),
+                    name: card.querySelector('a').textContent,
+                    status: status,
+                    deadline: card.getAttribute('data-deadline') || ''
+                });
+            });
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(lessonsData));
+    }
+    
+    function updateLessonCounts() {
+        for (const status in statusMap) {
+            const map = statusMap[status];
+            const listElement = document.getElementById(map.listId);
+            const countElement = document.getElementById(map.countId);
+
+            if (listElement && countElement) {
+                const count = listElement.children.length;
+                const currentTitle = countElement.textContent;
+                countElement.textContent = currentTitle.replace(/\(\d+\)/, `(${count})`);
+            }
+        }
+    }
+    
+    function updateLessonCountsAndSave() {
+        updateLessonCounts();
+        saveLessons();
+    }
+
+    function loadLessons() {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+            const lessons = JSON.parse(savedData);
+            lessons.forEach(lesson => {
+                createLessonElement(lesson.status, lesson.name, lesson.id, lesson.deadline);
+            });
+        }
+        updateLessonCounts();
+    }
+    
+    // --- PAGE TRANSITION FUNCTION (NEW FOR BACK BUTTON) ---
+    function smoothNavigate(url) {
+        // 1. Apply the fade-out class to the body
+        document.body.classList.add('fade-out');
+
+        // 2. Wait for 500ms (0.5 seconds, matching the CSS transition time)
+        setTimeout(() => {
+            // 3. Navigate after the fade-out is visually complete
+            window.location.href = url;
+        }, 500);
+    }
+    
+    // --- TOAST FUNCTIONALITY ---
+
+    function showToast(message) {
+        const toast = document.getElementById('toast-message');
+        toast.textContent = message;
+        toast.classList.add('show');
+
+        // Hide the toast after 3 seconds
+        setTimeout(function(){ 
+            toast.classList.remove('show');
+        }, 3000);
+    }
+    
+    // --- RENDER FUNCTIONS ---
+    
+    function createLessonElement(status, lessonName, id, deadline) {
+        const map = statusMap[status];
+        if (!map) return;
+
+        const lessonId = id || generateId();
+
+        const newLessonCard = document.createElement('div');
+        newLessonCard.className = 'lesson-card';
+        newLessonCard.setAttribute('data-status', status);
+        newLessonCard.setAttribute('data-id', lessonId);
+        newLessonCard.setAttribute('data-deadline', deadline || '');
+        newLessonCard.style.borderLeftColor = map.color;
+
+        let buttonsHTML = getButtonsHTML(status, lessonName, lessonId);
+
+        newLessonCard.innerHTML = `
+            <div class="lesson-title-row">
+                <a href="#">${lessonName}</a>
+                <div class="lesson-actions">${buttonsHTML}</div>
+            </div>
+            ${getDeadlineDisplay(status, deadline)}
+        `;
+
+        // Apply visual deadline alerts
+        applyDeadlineAlerts(newLessonCard, status, deadline);
+
+        const lessonList = document.getElementById(map.listId);
+        if (lessonList) {
+            lessonList.appendChild(newLessonCard);
+        }
+    }
+
+    function getDeadlineDisplay(status, deadline) {
+        if (status === 'completed' || !deadline) {
+            return '';
+        }
+
+        const today = getTodayDateString();
+        const tomorrow = getTomorrowDateString();
+        
+        let icon = '📅';
+        let text = `Deadline: ${formatDateForDisplay(deadline)}`;
+        let colorStyle = '';
+
+        if (deadline < today) {
+            icon = '🚨';
+            text = `OVERDUE (Was: ${formatDateForDisplay(deadline)})`;
+            colorStyle = `style="color: var(--color-overdue);"`;
+        } else if (deadline === today) {
+            icon = '🟠';
+            text = 'DEADLINE TODAY!';
+            colorStyle = `style="color: var(--color-due-today);"`;
+        } else if (deadline === tomorrow) {
+            icon = '🟡';
+            text = 'Deadline Tomorrow';
+            colorStyle = `style="color: #665200;"`; 
+        }
+
+        return `<div class="deadline-display" ${colorStyle}>
+                    <span class="deadline-icon">${icon}</span>
+                    <span>${text}</span>
+                </div>`;
+    }
+    
+    function applyDeadlineAlerts(cardElement, status, deadline) {
+        cardElement.classList.remove('overdue', 'due-today', 'due-tomorrow');
+
+        if (status === 'completed' || !deadline) {
+            return;
+        }
+
+        const today = getTodayDateString();
+        const tomorrow = getTomorrowDateString();
+
+        if (deadline < today) {
+            cardElement.classList.add('overdue');
+        } else if (deadline === today) {
+            cardElement.classList.add('due-today');
+        } else if (deadline === tomorrow) {
+            cardElement.classList.add('due-tomorrow');
+        }
+    }
+
+ function getButtonsHTML(status, lessonName, lessonId) {
+    let html = '';
+    
+    if (status !== 'completed') {
+        html += `<button class="due-btn" onclick="openDeadlineModal('${lessonId}')">📅 Set Deadline</button>`;
+    }
+
+    if (statusMap[status].prev) {
+        // Must have data-direction="up"
+        html += `<button class="move-btn" onclick="moveLesson(this, 'left')" data-direction="up" title="Move Up/Previous">◀</button>`;
+    }
+    if (statusMap[status].next) {
+        // Must have data-direction="down"
+        html += `<button class="move-btn" onclick="moveLesson(this, 'right')" data-direction="down" title="Move Down/Next">▶</button>`;
+    }
+    
+    html += `<button class="delete-btn" onclick="deleteLesson(this)">✖</button>`;
+    return html;
+}
+
+
+    // --- MODAL CONTROLS ---
+
+    function openModal(status) {
+        currentStatus = status; 
+        lessonModal.classList.add('active');
+        inputField.value = '';
+        okButton.disabled = true;
+        inputField.focus(); 
+    }
+    function closeModal() {
+        lessonModal.classList.remove('active');
+    }
+    inputField.addEventListener('input', function() {
+        okButton.disabled = this.value.trim().length === 0; 
+    });
+    okButton.addEventListener('click', function() {
+        const lessonName = inputField.value.trim();
+        if (lessonName.length > 0) {
+            createLessonElement(currentStatus, lessonName, null, ''); 
+            updateLessonCountsAndSave(); 
+            closeModal(); 
+        }
+    });
+
+    // --- DEADLINE MODAL CONTROLS ---
+
+    function openDeadlineModal(id) {
+        currentLessonId = id;
+        const card = document.querySelector(`.lesson-card[data-id="${id}"]`);
+        if (!card) return;
+
+        const lessonName = card.querySelector('a').textContent;
+        const currentDeadline = card.getAttribute('data-deadline');
+        
+        deadlineTitle.textContent = `Lesson: ${lessonName}`;
+        deadlineInput.value = currentDeadline || ''; 
+        
+        deadlineInput.setAttribute('min', getTodayDateString());
+
+        deadlineSetBtn.onclick = setDeadline;
+        
+        deadlineModal.classList.add('active');
+    }
+
+    function closeDeadlineModal() {
+        currentLessonId = null;
+        deadlineModal.classList.remove('active');
+    }
+
+    function setDeadline() {
+        const newDeadline = deadlineInput.value;
+        const card = document.querySelector(`.lesson-card[data-id="${currentLessonId}"]`);
+        if (!card || !newDeadline) return;
+
+        const lessonName = card.querySelector('a').textContent;
+        const status = card.getAttribute('data-status');
+        
+        card.setAttribute('data-deadline', newDeadline);
+        
+        card.innerHTML = `
+            <div class="lesson-title-row">
+                <a href="#">${lessonName}</a>
+                <div class="lesson-actions">${getButtonsHTML(status, lessonName, currentLessonId)}</div>
+            </div>
+            ${getDeadlineDisplay(status, newDeadline)}
+        `;
+
+        applyDeadlineAlerts(card, status, newDeadline);
+        
+        updateLessonCountsAndSave(); 
+        closeDeadlineModal(); 
+    }
+    
+    function clearDeadline() {
+        const card = document.querySelector(`.lesson-card[data-id="${currentLessonId}"]`);
+        if (!card) return;
+
+        const lessonName = card.querySelector('a').textContent;
+        const status = card.getAttribute('data-status');
+
+        card.setAttribute('data-deadline', '');
+        
+        card.innerHTML = `
+            <div class="lesson-title-row">
+                <a href="#">${lessonName}</a>
+                <div class="lesson-actions">${getButtonsHTML(status, lessonName, currentLessonId)}</div>
+            </div>
+            ${getDeadlineDisplay(status, '')}
+        `;
+
+        applyDeadlineAlerts(card, status, ''); 
+
+        updateLessonCountsAndSave();
+        closeDeadlineModal(); 
+    }
+
+    // --- LESSON MANIPULATION FUNCTIONS ---
+
+    function deleteLesson(buttonElement) {
+        const lessonCard = buttonElement.closest('.lesson-card');
+        if (lessonCard) {
+            lessonCard.remove();
+            updateLessonCountsAndSave();
+        }
+    }
+    
+    function moveLesson(buttonElement, direction) {
+        const lessonCard = buttonElement.closest('.lesson-card');
+        if (!lessonCard) return;
+
+        const currentStatus = lessonCard.getAttribute('data-status');
+        const map = statusMap[currentStatus];
+        
+        let newStatus = (direction === 'right') ? map.next : map.prev;
+        
+        if (!newStatus) return;
+
+        const newMap = statusMap[newStatus];
+        const newLessonList = document.getElementById(newMap.listId);
+        
+        const lessonName = lessonCard.querySelector('a').textContent;
+        const lessonId = lessonCard.getAttribute('data-id');
+        const deadline = lessonCard.getAttribute('data-deadline');
+
+        if (newLessonList) {
+            lessonCard.setAttribute('data-status', newStatus);
+            lessonCard.style.borderLeftColor = newMap.color;
+            
+            // 1. Re-render card content
+            let deadlineHtml = '';
+            if (newStatus !== 'completed' && deadline) {
+                 deadlineHtml = getDeadlineDisplay(newStatus, deadline);
+            }
+            
+            lessonCard.innerHTML = `
+                <div class="lesson-title-row">
+                    <a href="#">${lessonName}</a>
+                    <div class="lesson-actions">${getButtonsHTML(newStatus, lessonName, lessonId)}</div>
+                </div>
+                ${deadlineHtml}
+            `;
+            
+            // 2. Apply alerts (or clear if moving to completed)
+            applyDeadlineAlerts(lessonCard, newStatus, deadline);
+
+            newLessonList.appendChild(lessonCard);
+            
+            updateLessonCountsAndSave(); 
+            
+            // Show Toast Notification on completion
+            if (newStatus === 'completed') {
+                showToast(`Congratulations! You completed: ${lessonName} 🎉`);
+            }
+        }
+    }
+
+    // Load saved data when the page loads
+    document.addEventListener('DOMContentLoaded', loadLessons);
+
+    // Remove the fade-out class on load to trigger the smooth fade-in
+    window.addEventListener('load', () => {
+        document.body.classList.remove('fade-out');
+    });
+</script>
+
+</body>
+</html>
